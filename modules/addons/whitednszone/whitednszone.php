@@ -63,6 +63,11 @@ function whitednszone_config()
                 'Type' => 'yesno',
                 'Description' => 'Enable DNS propagation checking feature',
             ],
+            'auto_create_zone' => [
+                'FriendlyName' => 'Auto Create DNS Zone',
+                'Type' => 'yesno',
+                'Description' => 'Automatically create DNS zones when domains are registered',
+            ],
         ],
     ];
 }

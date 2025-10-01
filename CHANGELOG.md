@@ -47,6 +47,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Search and filter functionality on admin records page
+- Auto-create DNS zone configuration option
+- ClientAreaPageDomainDNSManagement hook to redirect WHMCS DNS management to WhiteDNSZone
+- AfterRegistrarRegistration hook to auto-create DNS zones when domains are registered
+
+### Changed
+- Moved hooks.php from hooks/ subdirectory to main addon directory
+- Enhanced admin records view with domain filter, type filter, and search capabilities
+- Pagination now preserves filter parameters
+
 ### Planned Features
 - Import/export DNS zones
 - DNS zone transfer functionality

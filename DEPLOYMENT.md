@@ -38,8 +38,7 @@
 - [ ] Upload `templates/admin/zones.php`
 - [ ] Upload `templates/admin/records.php`
 - [ ] Upload `templates/admin/logs.php`
-- [ ] Create and upload `hooks/` directory
-- [ ] Upload `hooks/hooks.php`
+- [ ] Upload `hooks.php` to addon directory
 
 ### 2. File Permissions
 ```bash
@@ -52,8 +51,6 @@ chmod 755 /path/to/whmcs/modules/addons/whitednszone/templates
 chmod 644 /path/to/whmcs/modules/addons/whitednszone/templates/*.tpl
 chmod 755 /path/to/whmcs/modules/addons/whitednszone/templates/admin
 chmod 644 /path/to/whmcs/modules/addons/whitednszone/templates/admin/*.php
-chmod 755 /path/to/whmcs/modules/addons/whitednszone/hooks
-chmod 644 /path/to/whmcs/modules/addons/whitednszone/hooks/*.php
 ```
 
 - [ ] All file permissions set correctly
