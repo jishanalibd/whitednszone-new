@@ -23,6 +23,71 @@
         <h3 class="panel-title">All DNS Records</h3>
     </div>
     <div class="panel-body">
+        <!-- Search and Filter Form -->
+        <form method="get" class="form-inline" style="margin-bottom: 20px;">
+            <input type="hidden" name="module" value="whitednszone">
+            <input type="hidden" name="action" value="records">
+            
+            <div class="form-group">
+                <label for="search">Search:</label>
+                <input type="text" name="search" id="search" class="form-control" 
+                       placeholder="Name, Content, or Domain" 
+                       value="<?php echo htmlspecialchars($_REQUEST['search'] ?? ''); ?>"
+                       style="width: 250px;">
+            </div>
+            
+            <div class="form-group" style="margin-left: 10px;">
+                <label for="filter_type">Type:</label>
+                <select name="filter_type" id="filter_type" class="form-control">
+                    <option value="">All Types</option>
+                    <?php foreach ($recordTypes as $type): ?>
+                        <option value="<?php echo htmlspecialchars($type); ?>"
+                                <?php echo (isset($_REQUEST['filter_type']) && $_REQUEST['filter_type'] === $type) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($type); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-left: 10px;">
+                <label for="filter_domain">Domain:</label>
+                <select name="filter_domain" id="filter_domain" class="form-control" style="width: 200px;">
+                    <option value="">All Domains</option>
+                    <?php foreach ($domains as $domain): ?>
+                        <option value="<?php echo htmlspecialchars($domain); ?>"
+                                <?php echo (isset($_REQUEST['filter_domain']) && $_REQUEST['filter_domain'] === $domain) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($domain); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="margin-left: 10px;">
+                <i class="fa fa-search"></i> Filter
+            </button>
+            
+            <?php if (!empty($_REQUEST['search']) || !empty($_REQUEST['filter_type']) || !empty($_REQUEST['filter_domain'])): ?>
+                <a href="?module=whitednszone&action=records" class="btn btn-default" style="margin-left: 5px;">
+                    <i class="fa fa-times"></i> Clear
+                </a>
+            <?php endif; ?>
+        </form>
+        
+        <?php if (!empty($_REQUEST['search']) || !empty($_REQUEST['filter_type']) || !empty($_REQUEST['filter_domain'])): ?>
+            <div class="alert alert-info">
+                Showing filtered results. 
+                <?php if (!empty($_REQUEST['search'])): ?>
+                    Search: <strong><?php echo htmlspecialchars($_REQUEST['search']); ?></strong>
+                <?php endif; ?>
+                <?php if (!empty($_REQUEST['filter_type'])): ?>
+                    Type: <strong><?php echo htmlspecialchars($_REQUEST['filter_type']); ?></strong>
+                <?php endif; ?>
+                <?php if (!empty($_REQUEST['filter_domain'])): ?>
+                    Domain: <strong><?php echo htmlspecialchars($_REQUEST['filter_domain']); ?></strong>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+        
         <?php if (empty($records)): ?>
             <p>No records found.</p>
         <?php else: ?>
@@ -58,9 +123,28 @@
             <?php if ($totalPages > 1): ?>
                 <nav>
                     <ul class="pagination">
-                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                        <?php 
+                        // Build query string for pagination
+                        $queryParams = [
+                            'module' => 'whitednszone',
+                            'action' => 'records',
+                        ];
+                        if (!empty($_REQUEST['search'])) {
+                            $queryParams['search'] = $_REQUEST['search'];
+                        }
+                        if (!empty($_REQUEST['filter_type'])) {
+                            $queryParams['filter_type'] = $_REQUEST['filter_type'];
+                        }
+                        if (!empty($_REQUEST['filter_domain'])) {
+                            $queryParams['filter_domain'] = $_REQUEST['filter_domain'];
+                        }
+                        
+                        for ($i = 1; $i <= $totalPages; $i++): 
+                            $queryParams['page'] = $i;
+                            $queryString = http_build_query($queryParams);
+                        ?>
                             <li class="<?php echo $i === $page ? 'active' : ''; ?>">
-                                <a href="?module=whitednszone&action=records&page=<?php echo $i; ?>">
+                                <a href="?<?php echo $queryString; ?>">
                                     <?php echo $i; ?>
                                 </a>
                             </li>

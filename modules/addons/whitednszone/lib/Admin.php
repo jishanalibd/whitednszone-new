@@ -114,20 +114,63 @@ class Admin
         $perPage = 100;
         $offset = ($page - 1) * $perPage;
         
-        $records = Capsule::table('mod_whitednszone_records')
+        // Get filter parameters
+        $searchTerm = $_REQUEST['search'] ?? '';
+        $filterType = $_REQUEST['filter_type'] ?? '';
+        $filterDomain = $_REQUEST['filter_domain'] ?? '';
+        
+        // Build query
+        $query = Capsule::table('mod_whitednszone_records')
             ->join('mod_whitednszone_zones', 'mod_whitednszone_zones.id', '=', 'mod_whitednszone_records.zone_id')
             ->select(
                 'mod_whitednszone_records.*',
                 'mod_whitednszone_zones.domain',
                 'mod_whitednszone_zones.userid'
-            )
-            ->orderBy('mod_whitednszone_records.updated_at', 'desc')
+            );
+        
+        // Apply search filter
+        if (!empty($searchTerm)) {
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('mod_whitednszone_records.name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('mod_whitednszone_records.content', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('mod_whitednszone_zones.domain', 'like', '%' . $searchTerm . '%');
+            });
+        }
+        
+        // Apply type filter
+        if (!empty($filterType)) {
+            $query->where('mod_whitednszone_records.type', $filterType);
+        }
+        
+        // Apply domain filter
+        if (!empty($filterDomain)) {
+            $query->where('mod_whitednszone_zones.domain', 'like', '%' . $filterDomain . '%');
+        }
+        
+        // Get total count for pagination (before offset/limit)
+        $totalRecords = $query->count();
+        
+        // Apply pagination
+        $records = $query->orderBy('mod_whitednszone_records.updated_at', 'desc')
             ->offset($offset)
             ->limit($perPage)
             ->get();
         
-        $totalRecords = Capsule::table('mod_whitednszone_records')->count();
         $totalPages = ceil($totalRecords / $perPage);
+        
+        // Get unique record types for filter dropdown
+        $recordTypes = Capsule::table('mod_whitednszone_records')
+            ->distinct()
+            ->pluck('type')
+            ->toArray();
+        sort($recordTypes);
+        
+        // Get unique domains for filter dropdown
+        $domains = Capsule::table('mod_whitednszone_zones')
+            ->distinct()
+            ->orderBy('domain')
+            ->pluck('domain')
+            ->toArray();
         
         ob_start();
         include __DIR__ . '/../templates/admin/records.php';
