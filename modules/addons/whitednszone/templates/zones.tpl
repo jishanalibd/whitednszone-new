@@ -1,4 +1,6 @@
-<div class="container">
+<link rel="stylesheet" href="../modules/addons/whitednszone/assets/css/style.css">
+
+<div class="container whitednszone-container">
     <div class="row">
         <div class="col-md-12">
             <div class="panel panel-default">
@@ -11,8 +13,39 @@
                     <p>Manage your DNS zones and records for all your domains.</p>
                     
                     {if $zones}
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
+                        <!-- Search and Filter Bar -->
+                        <div class="whitednszone-search-bar">
+                            <div class="row">
+                                <div class="col-sm-4">
+                                    <input type="text" id="zoneSearch" class="form-control" placeholder="Search domains...">
+                                </div>
+                                <div class="col-sm-3">
+                                    <select id="zoneStatusFilter" class="form-control">
+                                        <option value="">All Status</option>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                        <option value="pending">Pending</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-2">
+                                    <select id="zonesPerPage" class="form-control">
+                                        <option value="10">10 per page</option>
+                                        <option value="25">25 per page</option>
+                                        <option value="50">50 per page</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-3">
+                                    <button type="button" id="clearFilters" class="btn btn-default">
+                                        <i class="fa fa-times"></i> Clear Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="zonesStats" class="text-muted" style="margin-bottom: 10px;"></div>
+                        
+                        <div class="table-responsive whitednszone-zones-table">
+                            <table class="table table-striped table-hover" id="zonesTable">
                                 <thead>
                                     <tr>
                                         <th>Domain</th>
@@ -53,6 +86,8 @@
                                 </tbody>
                             </table>
                         </div>
+                        
+                        <div id="zonesPagination" class="text-center whitednszone-pagination"></div>
                     {else}
                         <div class="alert alert-info">
                             <i class="fa fa-info-circle"></i> No DNS zones found. Contact support to add a zone.
@@ -64,8 +99,4 @@
     </div>
 </div>
 
-<style>
-.table > tbody > tr > td {
-    vertical-align: middle;
-}
-</style>
+<script src="../modules/addons/whitednszone/assets/js/zones.js"></script>

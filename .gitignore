@@ -52,3 +52,7 @@ coverage/
 *.tar
 *.tar.gz
 *.rar
+
+# Test files
+**/test.html
+**/test_*.html
