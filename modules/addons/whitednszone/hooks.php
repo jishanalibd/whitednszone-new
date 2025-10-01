@@ -91,6 +91,7 @@ add_hook('DailyCronJob', 1, function() {
  *
  * When users click "DNS Management" in the client area,
  * they are redirected to the WhiteDNSZone module interface.
+ * Automatically creates the zone if it doesn't exist.
  */
 add_hook('ClientAreaPageDomainDNSManagement', 1, function($vars) {
     if ($_SESSION['uid'] && App::getCurrentFilename() == 'clientarea' && filter_input(INPUT_GET, 'action', FILTER_SANITIZE_SPECIAL_CHARS) == 'domaindns') {
@@ -98,14 +99,107 @@ add_hook('ClientAreaPageDomainDNSManagement', 1, function($vars) {
         $domain_id = filter_input(INPUT_GET, 'domainid', FILTER_VALIDATE_INT);
 
         if ($domain_id) {
-            // Get system URL
-            $system_url = Capsule::table('tblconfiguration')->select('value')->where('setting', 'SystemURL')->first()->value;
+            try {
+                $userId = $_SESSION['uid'];
+                
+                // Get domain information
+                $domainInfo = Capsule::table('tbldomains')
+                    ->where('id', $domain_id)
+                    ->where('userid', $userId)
+                    ->first();
+                
+                if (!$domainInfo) {
+                    // Domain not found or access denied
+                    return;
+                }
+                
+                $domain = $domainInfo->domain;
+                
+                // Check if zone already exists
+                $existingZone = Capsule::table('mod_whitednszone_zones')
+                    ->where('domain', $domain)
+                    ->where('userid', $userId)
+                    ->first();
+                
+                if (!$existingZone) {
+                    // Get module configuration
+                    $config = Capsule::table('tbladdonmodules')
+                        ->where('module', 'whitednszone')
+                        ->pluck('value', 'setting');
+                    
+                    // Check if auto-create is enabled
+                    if (!empty($config['auto_create_zone']) && $config['auto_create_zone'] === 'on') {
+                        // Load API client
+                        require_once __DIR__ . '/lib/ApiClient.php';
+                        
+                        $apiClient = new \WhiteDNSZone\ApiClient(
+                            $config['api_url'] ?? 'https://my.whitednszone.com/api',
+                            $config['api_key'] ?? ''
+                        );
+                        
+                        // Get default nameservers
+                        $ns1 = $config['default_ns1'] ?? 'dns1.whitednszone.com';
+                        $ns2 = $config['default_ns2'] ?? 'dns2.whitednszone.com';
+                        
+                        // Create zone via API
+                        $result = $apiClient->createZone($domain, [$ns1, $ns2]);
+                        
+                        if ($result && isset($result['zone_id'])) {
+                            // Save zone to database
+                            $zoneId = Capsule::table('mod_whitednszone_zones')->insertGetId([
+                                'userid' => $userId,
+                                'domain' => $domain,
+                                'zone_id' => $result['zone_id'],
+                                'status' => 'active',
+                                'nameservers' => json_encode([$ns1, $ns2]),
+                                'created_at' => date('Y-m-d H:i:s'),
+                                'updated_at' => date('Y-m-d H:i:s'),
+                            ]);
+                            
+                            // Log the creation
+                            Capsule::table('mod_whitednszone_audit')->insert([
+                                'userid' => $userId,
+                                'zone_id' => $zoneId,
+                                'action' => 'zone_auto_created',
+                                'details' => 'Zone automatically created on DNS management access',
+                                'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'system',
+                                'created_at' => date('Y-m-d H:i:s'),
+                            ]);
+                            
+                            logActivity('WhiteDNSZone: Auto-created zone for ' . $domain . ' on redirect (User ID: ' . $userId . ')');
+                            
+                            // Set existing zone for redirect
+                            $existingZone = (object)['id' => $zoneId];
+                        } else {
+                            $error = $apiClient->getLastError();
+                            logActivity('WhiteDNSZone: Failed to auto-create zone for ' . $domain . ' on redirect - ' . $error);
+                        }
+                    }
+                }
+                
+                // Get system URL
+                $system_url = Capsule::table('tblconfiguration')->select('value')->where('setting', 'SystemURL')->first()->value;
 
-            // Redirect to WhiteDNSZone using standard WHMCS addon URL
-            $url = rtrim($system_url, '/') . '/index.php?m=whitednszone&id=' . $domain_id;
+                // Redirect to WhiteDNSZone using standard WHMCS addon URL
+                if ($existingZone) {
+                    // Redirect directly to zone management
+                    $url = rtrim($system_url, '/') . '/index.php?m=whitednszone&action=manage&zone_id=' . $existingZone->id;
+                } else {
+                    // Redirect to zones list
+                    $url = rtrim($system_url, '/') . '/index.php?m=whitednszone';
+                }
 
-            header('Location: '.$url, true, '302');
-            exit();
+                header('Location: '.$url, true, '302');
+                exit();
+            } catch (\Exception $e) {
+                logActivity('WhiteDNSZone: Error in ClientAreaPageDomainDNSManagement hook - ' . $e->getMessage());
+                
+                // Fallback redirect to zones list
+                $system_url = Capsule::table('tblconfiguration')->select('value')->where('setting', 'SystemURL')->first()->value;
+                $url = rtrim($system_url, '/') . '/index.php?m=whitednszone';
+                header('Location: '.$url, true, '302');
+                exit();
+            }
         }
     }
 });
