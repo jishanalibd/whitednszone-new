@@ -1,0 +1,54 @@
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Configuration files with sensitive data
+config.php
+*_local.php
+.env
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Node modules (if any JS build tools used)
+node_modules/
+npm-debug.log*
+
+# Composer (if used)
+vendor/
+composer.lock
+
+# Build artifacts
+dist/
+build/
+
+# Test coverage
+coverage/
+.phpunit.result.cache
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
